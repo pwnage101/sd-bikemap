@@ -1,0 +1,18 @@
+//[out:json]
+[timeout:800]
+// Bounding box of san diego
+[bbox:32.5,-117.38,33.34,-116.88];
+(
+  // class I: cycleway=track
+  // class II: cycleway=lane or cycleway=share_busway
+  // clsas III: Not queried.
+  // class IV: highway=cycleway
+  way["cycleway"       ~ "^(lane|track|share_busway)$"];
+  way["cycleway:right" ~ "^(lane|track|share_busway)$"];
+  way["cycleway:left"  ~ "^(lane|track|share_busway)$"];
+  way["cycleway:both"  ~ "^(lane|track|share_busway)$"];
+  way["highway"        = "cycleway"];
+)->.bikeLanes;
+(.bikeLanes;);
+out geom;
+
