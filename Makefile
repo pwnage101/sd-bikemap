@@ -4,7 +4,7 @@
 
 requirements : 
 	npm ci
-fetch-osm-data : layers/current_bike_infrastructure.geojson layers/schools.geojson
+fetch-osm-data : layers/current_bike_infrastructure.geojson layers/schools.geojson layers/sexy_streets.geojson
 local : fetch-osm-data requirements
 	python3 -m http.server
 
@@ -18,3 +18,6 @@ layers/schools.geojson : layers/schools.osm
 	node_modules/osmtogeojson/osmtogeojson $< >$@
 layers/schools.osm : queries/schools.osm
 	wget -O $@ --post-file=$< "https://overpass-api.de/api/interpreter"
+
+layers/sexy_streets.geojson : gis/San\ Diego\ Sexy\ Streets\ Projects\ FY22-23.kml
+	node_modules/@mapbox/togeojson/togeojson "$<" >$@

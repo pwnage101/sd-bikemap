@@ -38,27 +38,7 @@
             'minzoom': 6,
             'maxzoom': 14
         });
-	/*
-        map.addLayer(
-            {
-                'id': 'mapillary', // Layer ID
-                'type': 'line',
-                'source': 'mapillary', // ID of the tile source created above
-                // Source has several layers. We visualize the one with name 'sequence'.
-                'source-layer': 'sequence',
-                'layout': {
-                    'line-cap': 'round',
-                    'line-join': 'round'
-                },
-                'paint': {
-                    'line-opacity': 0.6,
-                    'line-color': 'rgb(53, 175, 109)',
-                    'line-width': 2
-                }
-            },
-            'road-label' // Arrange our new layer beneath this layer
-        );
-        */
+
         // Fetch the bike lanes data and add it to the map once it is loaded.
         $.getJSON("layers/current_bike_infrastructure.geojson", function(data) {
             map.addSource('bikeLanes', {
@@ -76,12 +56,32 @@
                 },
                 'paint': {
                     'line-color': '#22f',
-                    'line-width': 2,
+                    'line-width': 2.5,
                 }
             });
         });
 
-	
+        // Fetch the San Diego "sexy streets" data and add it to the map once it is loaded.
+        $.getJSON("layers/sexy_streets.geojson", function(data) {
+            map.addSource('sexyStreets', {
+                'type': 'geojson',
+                'data': data,
+                'attribution': 'Sexy Streets &copy; Jacob Mandel and SANDAG',
+            });
+            map.addLayer({
+                'id': 'sexyStreets',
+                'type': 'line',
+                'source': 'sexyStreets',
+                'layout': {
+                    'line-join': 'round',
+                    'line-cap': 'round'
+                },
+                'paint': {
+                    'line-color': '#d10069',  // hot pink
+                    'line-width': 2,
+                }
+            });
+        });
 
         // Fetch the schools and add it to the map once it is loaded.
         $.getJSON("layers/schools.geojson", function(data) {
