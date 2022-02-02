@@ -1,0 +1,10 @@
+[timeout:800];
+(
+  area[name="San Diego County"];
+) -> .search;
+(
+  relation["amenity"="school"](area.search);
+  node["amenity"="school"](area.search);
+  way["amenity"="school"](area.search);
+) -> .schools;
+.schools out center;

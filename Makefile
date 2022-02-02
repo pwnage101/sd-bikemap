@@ -4,7 +4,7 @@
 
 requirements : 
 	npm ci
-fetch-osm-data : layers/current_bike_infrastructure.geojson
+fetch-osm-data : layers/current_bike_infrastructure.geojson layers/schools.geojson
 local : fetch-osm-data requirements
 	python3 -m http.server
 
@@ -14,3 +14,7 @@ layers/current_bike_infrastructure.osm : queries/current_bike_infrastructure.osm
 	wget -O $@ --post-file=$< "https://overpass-api.de/api/interpreter"
 
 
+layers/schools.geojson : layers/schools.osm
+	node_modules/osmtogeojson/osmtogeojson $< >$@
+layers/schools.osm : queries/schools.osm
+	wget -O $@ --post-file=$< "https://overpass-api.de/api/interpreter"
