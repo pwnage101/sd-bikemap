@@ -21,3 +21,6 @@ layers/schools.osm : queries/schools.osm
 
 layers/sexy_streets.geojson : gis/San\ Diego\ Sexy\ Streets\ Projects\ FY22-23.kml
 	node_modules/@mapbox/togeojson/togeojson "$<" >$@
+
+layers/crashes.geojson : gis/Crashes.csv
+	node_modules/csv2geojson/csv2geojson --lon POINT_X --lat POINT_Y "$<" >$@
