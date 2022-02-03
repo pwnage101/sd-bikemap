@@ -98,6 +98,33 @@
                 13, ['get', 'name'] // at zoom level 13+, show a label based on the name attribute!
             ],
         },
+        crashes: {
+            'name':               'Crashes (10y)',
+            'data-url':           'layers/crashes.geojson',
+            'type':               'heatmap',
+	    'pivot-zoom':         14,
+            'default-visibility': 'none',
+            'attribution':        'Crashes &copy; TIMS/UC Berkeley',
+        },
+    }
+
+    function toggleOverlayVisibility(linkElement) {
+        const overlayConfig = overlayLayersConfig[linkElement.id]
+        const currentVisibility = map.getLayoutProperty(overlayConfig['added-layer-ids'][0], 'visibility') ?? 'visible';
+        
+        // Toggle layer visibility by changing the layout object's visibility property.
+        if (currentVisibility === 'visible') {
+            linkElement.className = '';
+            overlayConfig['added-layer-ids'].forEach(
+                (layerId) => map.setLayoutProperty(layerId, 'visibility', 'none')
+            );
+        } else {
+            linkElement.className = 'active';
+            overlayConfig['added-layer-ids'].forEach(
+                (layerId) => map.setLayoutProperty(layerId, 'visibility', 'visible')
+            );
+        }
+        
     }
 
     // Set up the corresponding toggle button for each layer.
@@ -142,20 +169,9 @@
 
         // Show or hide layer when the toggle is clicked.
         linkElement.onclick = function (e) {
-            const clickedLayerId = this.id;
             e.preventDefault();
             e.stopPropagation();
-
-            const visibility = map.getLayoutProperty(clickedLayerId, 'visibility') ?? 'visible';
-
-            // Toggle layer visibility by changing the layout object's visibility property.
-            if (visibility === 'visible') {
-                this.className = '';
-                map.setLayoutProperty(clickedLayerId, 'visibility', 'none');
-            } else {
-                this.className = 'active';
-                map.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
-            }
+            toggleOverlayVisibility(this);
         };
 
         const layersMenu = document.getElementById('layers-menu');
@@ -209,6 +225,7 @@
 
                 // Right now the only two supported data types are lines (ways) or symbols (nodes).
                 if (overlayConfig.type === 'line') {
+                    overlayConfig['added-layer-ids'] = [overlayId]
                     map.addLayer({
                         'id': overlayId,
                         'type': 'line',
@@ -229,6 +246,7 @@
                         (error, image) => {
                             if (error) throw error;
                             map.addImage(overlayId + '-marker', image);
+                            overlayConfig['added-layer-ids'] = [overlayId]
                             map.addLayer({
                                 'id': overlayId,
                                 'type': 'symbol',
@@ -250,10 +268,95 @@
                             });
                         }
                     );
+                } else if (overlayConfig.type === 'heatmap') {
+                    overlayConfig['added-layer-ids'] = [overlayId + '-heatmap']
+                    map.addLayer({
+                        'id': overlayId + '-heatmap',
+                        'type': 'heatmap',
+                        'source': overlayId,
+                        maxzoom: 15,
+                        'layout': {
+                            'visibility': overlayConfig['default-visibility'],
+                        },
+                        'paint': {
+                            // increase weight as diameter breast height increases
+                            'heatmap-weight': [
+                                'interpolate', ['linear'],
+                                ['to-number', ['get', 'COLLISION_SEVERITY']], // interpolation input value
+                                1, 1.0, // at collision severity 1 (someone killed), the weight at the maximum.
+				// between severity 4-1, linearly interpolate the weight.
+                                4, 0.3, // at collision severity 4 (minor injury), the weight is low, at only 0.3.
+                            ],
+                            // increase intensity as zoom level increases
+                            'heatmap-intensity': {
+                              stops: [
+                                [11, 1],
+                                [15, 3]
+                              ]
+                            },
+                            // assign color values be applied to points depending on their density
+                            'heatmap-color': [
+                              'interpolate', ['linear'],
+                              ['heatmap-density'], // interpolation input value
+                              0,   'rgba(180,180,0,0)',
+                              0.2, 'rgba(180,180,0,1)',
+                              0.8, 'rgba(180,  0,0,1)',
+                            ],
+                            // increase radius as zoom increases
+                            'heatmap-radius': {
+                              stops: [
+                                [11, 15],
+                                [15, 20]
+                              ]
+                            },
+                            // decrease opacity to transition into the circle layer
+                            'heatmap-opacity': {
+                              default: 1,
+                              stops: [
+                                [14, 1],
+                                [15, 0]
+                              ]
+                            }
+                        }
+                    }, firstSymbolId);
+
+		    // Point layer shows up after zooming in far enough.
+                    overlayConfig['added-layer-ids'].push(overlayId + '-points')
+                    map.addLayer(
+                      {
+                        'id': overlayId + '-points',
+                        type: 'circle',
+                        source: overlayId,
+                        minzoom: 14,
+                        'layout': {
+                            'visibility': overlayConfig['default-visibility'],
+                        },
+                        paint: {
+                          'circle-radius': 10,
+                          'circle-color': {
+                            property: 'COLLISION_SEVERITY',
+                            type: 'categorical',
+                            stops: [
+                              ['1', '#f00'],
+                              ['2', '#f60'],
+                              ['3', '#fb0'],
+                              ['4', '#ff0'],
+                            ]
+                          },
+                          'circle-stroke-color': 'black',
+                          'circle-stroke-width': 1,
+                          'circle-opacity': {
+                            stops: [
+                              [14, 0],
+                              [15, 1]
+                            ]
+                          }
+                        }
+                      }
+                    );
                 }
             });
         }
-
     });
 
 </script>
