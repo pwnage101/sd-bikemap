@@ -189,16 +189,6 @@
 
     // once the map is loaded, fetch and load all the data for the layers and add them to the map.
     map.on('load', () => {
-        // Add a basemap.
-        map.addSource('mapillary', {
-            'type': 'vector',
-            'tiles': [
-                'https://tiles.mapillary.com/maps/vtp/mly1_public/2/{z}/{x}/{y}?access_token=MLY|4142433049200173|72206abe5035850d6743b23a49c41333'
-            ],
-            'minzoom': 6,
-            'maxzoom': 14
-        });
-
         // Find the index of the first symbol layer in the map style.  This
         // helps us later add data layers beneath the map symbols like street
         // names and neighborhood names.
