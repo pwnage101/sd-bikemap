@@ -7,19 +7,162 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
     <style>
-    body { margin: 0; padding: 0; }
-    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-    html, body {
-        height: 100%;
-        margin: 0;
-    }
-    </style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        #layers-menu {
+            background: #fff;
+            position: absolute;
+            z-index: 1;
+            top: 10px;
+            right: 10px;
+            border-radius: 3px;
+            width: 180px;
+            border: 1px solid rgba(0, 0, 0, 0.4);
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        #layers-menu a {
+            font-size: 13px;
+            color: #404040;
+            display: block;
+            margin: 0;
+            padding: 0;
+            padding: 10px;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+            text-align: left;
+        }
+        #layers-menu a .layer-preview {
+            float: left;
+            border-style: solid;
+            border-width: 1px;
+            border-color: #777;
+            margin-right: 0.5em;
+        }
+        #layers-menu a:last-child {
+            border: none;
+        }
+        #layers-menu a:hover {
+            background-color: #f8f8f8;
+            color: #404040;
+        }
+        #layers-menu a.active {
+            background-color: #3887be;
+            color: #ffffff;
+        }
+        #layers-menu a.active:hover {
+            background: #3074a4;
+        }
+        </style>
 </head>
 <body>
 
+<nav id="layers-menu"></nav>
 <div id="map" style="width: 100%; height: 100%;"></div>
 <script>
 
+    overlayLayersConfig = {
+        bikeLanes: {
+            'name':               'OSM Bike Lanes',
+            'data-url':           'layers/current_bike_infrastructure.geojson',
+            'type':               'line',
+            'default-visibility': 'visible',
+            'attribution':        'OSM Bike Lanes &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            'line-color':         '#22f',
+            'line-width':         3,
+        },
+        sexyStreets: {
+            'name':               'SD "Sexy Streets"',
+            'data-url':           'layers/sexy_streets.geojson',
+            'type':               'line',
+            'default-visibility': 'none',
+            'attribution':        'Sexy Streets &copy; Jacob Mandel and SANDAG',
+            'line-color':         '#d10069',
+            'line-width':         2,
+        },
+        schools: {
+            'name':               'Schools',
+            'data-url':           'layers/schools.geojson',
+            'marker-url':         'icons/college.png',
+            'type':               'symbol',
+            'default-visibility': 'none',
+            'attribution':        'Schools &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            'icon-image':         'school-marker',
+            'text-field':         [
+                "step", ["zoom"],
+                '',                 // from zoom levels 0-12, no label
+                13, ['get', 'name'] // at zoom level 13+, show a label based on the name attribute!
+            ],
+        },
+    }
+
+    // Set up the corresponding toggle button for each layer.
+    for (const overlayId in overlayLayersConfig) {
+        const overlayConfig = overlayLayersConfig[overlayId]
+
+        // Create a link.
+        const linkElement = document.createElement('a');
+        linkElement.id = overlayId;
+        linkElement.href = '#';
+
+        if (overlayConfig['type'] === 'line') {
+            // create and add preview window of overlay layer
+            let previewSVG = document.createElementNS("http://www.w3.org/2000/svg", 'svg');
+            previewSVG.setAttribute('width', '25');
+            previewSVG.setAttribute('height', '16');
+            previewSVG.setAttribute('viewBox', '0 0 25 16');
+            previewSVG.setAttribute('class', 'layer-preview');
+            previewSVG.className = 'layer-preview';
+            let previewBackgroundRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            previewBackgroundRect.setAttribute('x', '0%');
+            previewBackgroundRect.setAttribute('y', '0%');
+            previewBackgroundRect.setAttribute('width', '100%');
+            previewBackgroundRect.setAttribute('height', '100%');
+            previewBackgroundRect.setAttribute('fill', '#fff');
+            previewSVG.appendChild(previewBackgroundRect);
+            let previewLineRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            previewLineRect.setAttribute("y", "40%");
+            previewLineRect.setAttribute("width", "100%");
+            previewLineRect.setAttribute("height", overlayConfig['line-width']);
+            previewLineRect.setAttribute("fill", overlayConfig['line-color']);
+            previewSVG.appendChild(previewLineRect);
+            linkElement.appendChild(previewSVG);
+        }
+
+        // add text name of overlay layer
+        const layerNameElement = document.createElement('span');
+        layerNameElement.textContent = overlayConfig['name'];
+        linkElement.appendChild(layerNameElement);
+
+        linkElement.className = (overlayConfig['default-visibility'] ?? 'visible') == 'visible' ? 'active' : '';
+
+        // Show or hide layer when the toggle is clicked.
+        linkElement.onclick = function (e) {
+            const clickedLayerId = this.id;
+            e.preventDefault();
+            e.stopPropagation();
+
+            const visibility = map.getLayoutProperty(clickedLayerId, 'visibility') ?? 'visible';
+
+            // Toggle layer visibility by changing the layout object's visibility property.
+            if (visibility === 'visible') {
+                this.className = '';
+                map.setLayoutProperty(clickedLayerId, 'visibility', 'none');
+            } else {
+                this.className = 'active';
+                map.setLayoutProperty(clickedLayerId, 'visibility', 'visible');
+            }
+        };
+
+        const layersMenu = document.getElementById('layers-menu');
+        layersMenu.appendChild(linkElement);
+    }
+
+    // Create the overall map element
     mapboxgl.accessToken = 'pk.eyJ1Ijoic2Fua2V5dG0iLCJhIjoiY2t6NW9uZjJtMHNodDJ2cDRtdWVjZmxpeSJ9.m6UectzjMjF_vZo2SquLeQ';
     const map = new mapboxgl.Map({
         container: 'map',
@@ -28,8 +171,9 @@
         center: [-117.1517, 32.7552]
     });
 
+    // once the map is loaded, fetch and load all the data for the layers and add them to the map.
     map.on('load', () => {
-        // Add a new vector tile source with ID 'mapillary'.
+        // Add a basemap.
         map.addSource('mapillary', {
             'type': 'vector',
             'tiles': [
@@ -39,89 +183,78 @@
             'maxzoom': 14
         });
 
-        // Fetch the bike lanes data and add it to the map once it is loaded.
-        $.getJSON("layers/current_bike_infrastructure.geojson", function(data) {
-            map.addSource('bikeLanes', {
-                'type': 'geojson',
-                'data': data,
-                'attribution': 'Bike Lanes &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            });
-            map.addLayer({
-                'id': 'bikeLanes',
-                'type': 'line',
-                'source': 'bikeLanes',
-                'layout': {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                'paint': {
-                    'line-color': '#22f',
-                    'line-width': 2.5,
-                }
-            });
-        });
+        // Find the index of the first symbol layer in the map style.  This
+        // helps us later add data layers beneath the map symbols like street
+        // names and neighborhood names.
+        let firstSymbolId;
+        for (const layer of map.getStyle().layers) {
+            if (layer.type === 'symbol') {
+                firstSymbolId = layer.id;
+                break;
+            }
+        }
+        // Start to loop over each overlay layer and fetch the data and add it to the map.
+        for (const overlayId in overlayLayersConfig) {
+            const overlayConfig = overlayLayersConfig[overlayId]
 
-        // Fetch the San Diego "sexy streets" data and add it to the map once it is loaded.
-        $.getJSON("layers/sexy_streets.geojson", function(data) {
-            map.addSource('sexyStreets', {
-                'type': 'geojson',
-                'data': data,
-                'attribution': 'Sexy Streets &copy; Jacob Mandel and SANDAG',
-            });
-            map.addLayer({
-                'id': 'sexyStreets',
-                'type': 'line',
-                'source': 'sexyStreets',
-                'layout': {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                'paint': {
-                    'line-color': '#d10069',  // hot pink
-                    'line-width': 2,
-                }
-            });
-        });
+            // use jQuery to fetch the geojson data for the current overlay layer.
+            $.getJSON(overlayConfig['data-url'], function(data) {
 
-        // Fetch the schools and add it to the map once it is loaded.
-        $.getJSON("layers/schools.geojson", function(data) {
-            // Add an image to use as a custom marker
-            map.loadImage(
-                'icons/college.png',
-                (error, image) => {
-                    if (error) throw error;
-                    map.addImage('school-marker', image);
-                    map.addSource('schools', {
-                        'type': 'geojson',
-                        'data': data,
-                        'attribution': 'Schools &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                    });
+                // Given the downloaded geojson data, add it to a new Mapbox "source" so that it can later be used by a layer.
+                map.addSource(overlayId, {
+                    'type': 'geojson',
+                    'data': data,
+                    'attribution': overlayConfig.attribution,
+                });
+
+                // Right now the only two supported data types are lines (ways) or symbols (nodes).
+                if (overlayConfig.type === 'line') {
                     map.addLayer({
-                        'id': 'schools',
-                        'type': 'symbol',
-                        'source': 'schools',
+                        'id': overlayId,
+                        'type': 'line',
+                        'source': overlayId,
                         'layout': {
-                            'icon-image': 'school-marker',
-                            'text-field': ["step", ["zoom"],
-                                '',                 // from zoom levels 0-11, no label
-                                12, '',             // at zoom level 12, no label
-                                13, ['get', 'name'] // at zoom level 13+, show a label!
-			    ],
-                            'text-font': [
-                                'Open Sans Semibold',
-                                'Arial Unicode MS Bold'
-                            ],
-                            'text-offset': [0, 1.25],
-                            'text-anchor': 'top'
+                            'line-join': 'round',
+                            'line-cap': 'round',
+                            'visibility': overlayConfig['default-visibility'],
+                        },
+                        'paint': {
+                            'line-color': overlayConfig['line-color'],
+                            'line-width': overlayConfig['line-width'],
                         }
-                    });
+                    }, firstSymbolId);
+                } else if (overlayConfig.type === 'symbol') {
+                    map.loadImage(
+                        overlayConfig['marker-url'],
+                        (error, image) => {
+                            if (error) throw error;
+                            map.addImage(overlayId + '-marker', image);
+                            map.addLayer({
+                                'id': overlayId,
+                                'type': 'symbol',
+                                'source': overlayId,
+                                'layout': {
+                                    'icon-image': overlayId + '-marker',
+                                    'text-field': ["step", ["zoom"],
+                                        '',                 // from zoom levels 0-12, no label
+                                        13, ['get', 'name'] // at zoom level 13+, show a label!
+                                    ],
+                                    'text-font': [
+                                        'Open Sans Semibold',
+                                        'Arial Unicode MS Bold'
+                                    ],
+                                    'text-offset': [0, 1.25],
+                                    'text-anchor': 'top',
+                                    'visibility': overlayConfig['default-visibility'],
+                                }
+                            });
+                        }
+                    );
                 }
-            );
-        });
+            });
+        }
 
     });
-
-    map.addControl(new mapboxgl.NavigationControl());
 
 </script>
 
