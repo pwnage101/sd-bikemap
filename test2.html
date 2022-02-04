@@ -99,13 +99,60 @@
             ],
         },
         crashes: {
-            'name':               'Crashes (10y)',
+            'name':               'Crashes (2011-2018)',
             'data-url':           'layers/crashes.geojson',
             'type':               'heatmap',
 	    'pivot-zoom':         14,
             'default-visibility': 'none',
             'attribution':        'Crashes &copy; TIMS/UC Berkeley',
+            // assign color values be applied to points depending on their density
+            'heatmap-color': [
+                'interpolate', ['linear'],
+                ['heatmap-density'], // interpolation input value
+                0,   'rgba(180,180,0,0)',
+                0.2, 'rgba(180,180,0,1)',
+                0.8, 'rgba(180,  0,0,1)',
+            ],
         },
+    }
+
+    overlayRenderOrder = [
+        'crashes',
+        'bikeLanes',
+        'sexyStreets',
+    ]
+
+    function trySortOverlays() {
+        readyToSort = overlayRenderOrder.every(
+            overlayId => overlayLayersConfig[overlayId].hasOwnProperty('added-layer-ids')
+        );
+        // Only attempt sorting once all the layers have been added to the map.
+        if (!readyToSort) {
+            return;
+        }
+        // Find the index of the first symbol layer in the map style.  This
+        // helps us later add data layers beneath the map symbols like street
+        // names and neighborhood names.
+        let firstSymbolId;
+        for (const layer of map.getStyle().layers) {
+            if (layer.type === 'symbol') {
+                firstSymbolId = layer.id;
+                break;
+            }
+        }
+        // Make a list of ordered layers from the ordered overlays.  By now, we should be complete adding all the
+        // layers, so all the overlay configs should have layer IDs filled in.
+        layerRenderOrder = overlayRenderOrder.map(
+            overlayId => overlayLayersConfig[overlayId]['added-layer-ids']
+        ).flat()
+        // Append the first symbol id to give us an anchor.  All the layers we're dealing with in this function should
+        // be non-text layers.
+        layerRenderOrder.push(firstSymbolId);
+	// Finally, iterate the layer render order in reverse because moveLayer() only supports adding behind a
+        // specified layer.
+        for (let i = layerRenderOrder.length - 2; i >= 0; i--) {
+            map.moveLayer(layerRenderOrder[i], layerRenderOrder[i+1]);
+        }
     }
 
     function toggleOverlayVisibility(linkElement) {
@@ -183,9 +230,13 @@
     const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/light-v10',
+	// center and zoom into San Diego
+        center: [-117.1517, 32.7552],
         zoom: 11,
-        center: [-117.1517, 32.7552]
-    });
+    });    
+
+    // disable map rotation using touch rotation gesture
+    map.touchZoomRotate.disableRotation();
 
     // once the map is loaded, fetch and load all the data for the layers and add them to the map.
     map.on('load', () => {
@@ -215,7 +266,6 @@
 
                 // Right now the only two supported data types are lines (ways) or symbols (nodes).
                 if (overlayConfig.type === 'line') {
-                    overlayConfig['added-layer-ids'] = [overlayId]
                     map.addLayer({
                         'id': overlayId,
                         'type': 'line',
@@ -230,6 +280,9 @@
                             'line-width': overlayConfig['line-width'],
                         }
                     }, firstSymbolId);
+
+                    // Update the overlay configs to signal to other overlays that they can add behind.
+                    overlayConfig['added-layer-ids'] = [overlayId]
                 } else if (overlayConfig.type === 'symbol') {
                     map.loadImage(
                         overlayConfig['marker-url'],
@@ -259,7 +312,6 @@
                         }
                     );
                 } else if (overlayConfig.type === 'heatmap') {
-                    overlayConfig['added-layer-ids'] = [overlayId + '-heatmap']
                     map.addLayer({
                         'id': overlayId + '-heatmap',
                         'type': 'heatmap',
@@ -279,41 +331,34 @@
                             ],
                             // increase intensity as zoom level increases
                             'heatmap-intensity': {
-                              stops: [
-                                [11, 1],
-                                [15, 3]
-                              ]
+                                stops: [
+                                    [9, 0.1],
+                                    [11, 1],
+                                    [15, 3]
+                                ]
                             },
                             // assign color values be applied to points depending on their density
-                            'heatmap-color': [
-                              'interpolate', ['linear'],
-                              ['heatmap-density'], // interpolation input value
-                              0,   'rgba(180,180,0,0)',
-                              0.2, 'rgba(180,180,0,1)',
-                              0.8, 'rgba(180,  0,0,1)',
-                            ],
+                            'heatmap-color': overlayConfig['heatmap-color'],
                             // increase radius as zoom increases
                             'heatmap-radius': {
-                              stops: [
-                                [11, 15],
-                                [15, 20]
-                              ]
+                                stops: [
+                                    [11, 15],
+                                    [15, 20]
+                                ]
                             },
                             // decrease opacity to transition into the circle layer
                             'heatmap-opacity': {
-                              default: 1,
-                              stops: [
-                                [14, 1],
-                                [15, 0]
-                              ]
+                                default: 1,
+                                stops: [
+                                    [14, 1],
+                                    [15, 0]
+                                ]
                             }
                         }
                     }, firstSymbolId);
 
 		    // Point layer shows up after zooming in far enough.
-                    overlayConfig['added-layer-ids'].push(overlayId + '-points')
-                    map.addLayer(
-                      {
+                    map.addLayer({
                         'id': overlayId + '-points',
                         type: 'circle',
                         source: overlayId,
@@ -322,29 +367,33 @@
                             'visibility': overlayConfig['default-visibility'],
                         },
                         paint: {
-                          'circle-radius': 10,
-                          'circle-color': {
-                            property: 'COLLISION_SEVERITY',
-                            type: 'categorical',
-                            stops: [
-                              ['1', '#f00'],
-                              ['2', '#f60'],
-                              ['3', '#fb0'],
-                              ['4', '#ff0'],
-                            ]
-                          },
-                          'circle-stroke-color': 'black',
-                          'circle-stroke-width': 1,
-                          'circle-opacity': {
-                            stops: [
-                              [14, 0],
-                              [15, 1]
-                            ]
-                          }
+                            'circle-radius': 10,
+                            'circle-color': {
+                                property: 'COLLISION_SEVERITY',
+                                type: 'categorical',
+                                stops: [
+                                    ['1', '#f00'],
+                                    ['2', '#f60'],
+                                    ['3', '#fb0'],
+                                    ['4', '#ff0'],
+                                ]
+                            },
+                            'circle-stroke-color': 'black',
+                            'circle-stroke-width': 1,
+                            'circle-opacity': {
+                                stops: [
+                                    [14, 0],
+                                    [15, 1]
+                                ]
+                            }
                         }
-                      }
-                    );
+                    }, firstSymbolId);
+
+                    // Update the overlay configs to signal to other overlays that they can add behind.
+                    overlayConfig['added-layer-ids'] = [overlayId + '-heatmap']
+                    overlayConfig['added-layer-ids'].push(overlayId + '-points')
                 }
+                trySortOverlays();
             });
         }
     });

@@ -4,7 +4,7 @@
 
 requirements : 
 	npm ci
-fetch-osm-data : layers/current_bike_infrastructure.geojson layers/schools.geojson layers/sexy_streets.geojson
+fetch-osm-data : layers/current_bike_infrastructure.geojson layers/schools.geojson layers/sexy_streets.geojson layers/crashes.geojson
 local : fetch-osm-data requirements
 	python3 -m http.server
 
@@ -22,5 +22,5 @@ layers/schools.osm : queries/schools.osm
 layers/sexy_streets.geojson : gis/San\ Diego\ Sexy\ Streets\ Projects\ FY22-23.kml
 	node_modules/@mapbox/togeojson/togeojson "$<" >$@
 
-layers/crashes.geojson : gis/Crashes.csv
+layers/crashes.geojson : gis/Crashes-sd-county-2011-2018.csv
 	node_modules/csv2geojson/csv2geojson --lon POINT_X --lat POINT_Y "$<" >$@
