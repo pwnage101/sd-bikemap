@@ -75,6 +75,18 @@
             'line-color':         '#22f',
             'line-width':         3,
         },
+        campaigns: {
+            'name':               'BikeSD Campaigns',
+            'data-url':           'layers/campaigns.geojson',
+            'type':               'line',
+            'default-visibility': 'visible',
+            'attribution':        '',
+            'line-color':         '#282',
+            'line-width':         6,
+            'line-dasharray':     [3, 2],
+            'line-join': 'bevel',
+            'line-cap': 'square',
+        },
         sexyStreets: {
             'name':               'SD "Sexy Streets"',
             'data-url':           'layers/sexy_streets.geojson',
@@ -120,6 +132,7 @@
         'crashes',
         'bikeLanes',
         'sexyStreets',
+        'campaigns',
     ]
 
     function trySortOverlays() {
@@ -271,8 +284,8 @@
                         'type': 'line',
                         'source': overlayId,
                         'layout': {
-                            'line-join': 'round',
-                            'line-cap': 'round',
+                            'line-join': overlayConfig['line-join'] || 'round',
+                            'line-cap': overlayConfig['line-cap'] || 'round',
                             'visibility': overlayConfig['default-visibility'],
                         },
                         'paint': {
@@ -280,6 +293,10 @@
                             'line-width': overlayConfig['line-width'],
                         }
                     }, firstSymbolId);
+
+                    if (overlayConfig.hasOwnProperty('line-dasharray')) {
+                        map.setPaintProperty(overlayId, 'line-dasharray', overlayConfig['line-dasharray']);
+                    }
 
                     // Update the overlay configs to signal to other overlays that they can add behind.
                     overlayConfig['added-layer-ids'] = [overlayId]
@@ -372,10 +389,10 @@
                                 property: 'COLLISION_SEVERITY',
                                 type: 'categorical',
                                 stops: [
-                                    ['1', '#f00'],
-                                    ['2', '#f60'],
-                                    ['3', '#fb0'],
-                                    ['4', '#ff0'],
+                                    ['1', '#f00'], // red: collision severity 1 (killed)
+                                    ['2', '#f60'], // reddish: collision severity 2 (severe injury)
+                                    ['3', '#fb0'], // yellowish: collision severity 1 (injury)
+                                    ['4', '#ff0'], // yellow: collision severity 1 (complaint of pain)
                                 ]
                             },
                             'circle-stroke-color': 'black',
