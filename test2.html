@@ -121,9 +121,28 @@
             'heatmap-color': [
                 'interpolate', ['linear'],
                 ['heatmap-density'], // interpolation input value
-                0,   'rgba(180,180,0,0)',
-                0.2, 'rgba(180,180,0,1)',
-                0.8, 'rgba(180,  0,0,1)',
+                0,   'rgba(180, 180, 0, 0)',
+                0.2, 'rgba(180, 180, 0, 1)',
+                1.0, 'rgba(180,   0, 0, 1)',
+            ],
+            'circle-radius': 10,
+            'circle-color': {
+                property: 'COLLISION_SEVERITY',
+                type: 'categorical',
+                stops: [
+                    ['1', '#f00'], // red: collision severity 1 (killed)
+                    ['2', '#f70'], // reddish: collision severity 2 (severe injury)
+                    ['3', '#fb0'], // yellowish: collision severity 1 (injury)
+                    ['4', '#ff0'], // yellow: collision severity 1 (complaint of pain)
+                ]
+            },
+            // increase weight as diameter breast height increases
+            'heatmap-weight': [
+                'interpolate', ['linear'],
+                ['to-number', ['get', 'COLLISION_SEVERITY']], // interpolation input value
+                1, 1.0, // at collision severity 1 (someone killed), the weight at the maximum.
+	        // between severity 4-1, linearly interpolate the weight.
+                4, 0.3, // at collision severity 4 (minor injury), the weight is low, at only 0.3.
             ],
         },
     }
@@ -339,19 +358,13 @@
                         },
                         'paint': {
                             // increase weight as diameter breast height increases
-                            'heatmap-weight': [
-                                'interpolate', ['linear'],
-                                ['to-number', ['get', 'COLLISION_SEVERITY']], // interpolation input value
-                                1, 1.0, // at collision severity 1 (someone killed), the weight at the maximum.
-				// between severity 4-1, linearly interpolate the weight.
-                                4, 0.3, // at collision severity 4 (minor injury), the weight is low, at only 0.3.
-                            ],
+                            'heatmap-weight': overlayConfig['heatmap-weight'],
                             // increase intensity as zoom level increases
                             'heatmap-intensity': {
                                 stops: [
-                                    [9, 0.1],
-                                    [11, 1],
-                                    [15, 3]
+                                    [9,  0.05],
+                                    [11, 0.50],
+                                    [15, 1.50],
                                 ]
                             },
                             // assign color values be applied to points depending on their density
@@ -384,17 +397,8 @@
                             'visibility': overlayConfig['default-visibility'],
                         },
                         paint: {
-                            'circle-radius': 10,
-                            'circle-color': {
-                                property: 'COLLISION_SEVERITY',
-                                type: 'categorical',
-                                stops: [
-                                    ['1', '#f00'], // red: collision severity 1 (killed)
-                                    ['2', '#f70'], // reddish: collision severity 2 (severe injury)
-                                    ['3', '#fb0'], // yellowish: collision severity 1 (injury)
-                                    ['4', '#ff0'], // yellow: collision severity 1 (complaint of pain)
-                                ]
-                            },
+                            'circle-radius': overlayConfig['circle-radius'],
+                            'circle-color': overlayConfig['circle-color'],
                             'circle-stroke-color': 'black',
                             'circle-stroke-width': 1,
                             'circle-opacity': {
