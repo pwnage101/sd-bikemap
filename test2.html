@@ -13,7 +13,7 @@
             height: 100%;
             margin: 0;
         }
-        #layers-menu {
+        #overlays-menu {
             background: #fff;
             position: absolute;
             z-index: 1;
@@ -25,7 +25,7 @@
             font-family: 'Open Sans', sans-serif;
         }
 
-        #layers-menu a {
+        #overlays-menu a {
             font-size: 13px;
             color: #404040;
             display: block;
@@ -36,32 +36,32 @@
             border-bottom: 1px solid rgba(0, 0, 0, 0.25);
             text-align: left;
         }
-        #layers-menu a .layer-preview {
+        #overlays-menu a .overlay-preview-icon {
             float: left;
             border-style: solid;
             border-width: 1px;
-            border-color: #777;
+            border-color: #5554;
             margin-right: 0.5em;
         }
-        #layers-menu a:last-child {
+        #overlays-menu a:last-child {
             border: none;
         }
-        #layers-menu a:hover {
+        #overlays-menu a:hover {
             background-color: #f8f8f8;
             color: #404040;
         }
-        #layers-menu a.active {
+        #overlays-menu a.active {
             background-color: #3887be;
             color: #ffffff;
         }
-        #layers-menu a.active:hover {
+        #overlays-menu a.active:hover {
             background: #3074a4;
         }
         </style>
 </head>
 <body>
 
-<nav id="layers-menu"></nav>
+<nav id="overlays-menu"></nav>
 <div id="map" style="width: 100%; height: 100%;"></div>
 <script>
 
@@ -155,6 +155,10 @@
     ]
 
     function trySortOverlays() {
+        //
+        // Sort all the layers of the overlays based on the predetermined overlayRenderOrder.
+        //
+
         readyToSort = overlayRenderOrder.every(
             overlayId => overlayLayersConfig[overlayId].hasOwnProperty('added-layer-ids')
         );
@@ -188,9 +192,16 @@
     }
 
     function toggleOverlayVisibility(linkElement) {
+        //
+        // One of the overlay links was clicked, so toggle the both the visibility of that overlay
+        // and the link itself.
+        //
+        // Args:
+        //   - linkElement: The link element clicked.
+
         const overlayConfig = overlayLayersConfig[linkElement.id]
         const currentVisibility = map.getLayoutProperty(overlayConfig['added-layer-ids'][0], 'visibility') ?? 'visible';
-        
+
         // Toggle layer visibility by changing the layout object's visibility property.
         if (currentVisibility === 'visible') {
             linkElement.className = '';
@@ -203,43 +214,63 @@
                 (layerId) => map.setLayoutProperty(layerId, 'visibility', 'visible')
             );
         }
-        
+
     }
 
-    // Set up the corresponding toggle button for each layer.
-    for (const overlayId in overlayLayersConfig) {
-        const overlayConfig = overlayLayersConfig[overlayId]
+    function makeOverlayPreviewIcon(overlayConfig) {
+        //
+        // Return an SVG element which contains an icon which visually represents the given overlay.
+        //
+        // Args:
+        //   - overlayConfig (object): configuration for a map overlay.
+        //
+        // Returns:
+        //   An SVG DOM element which can be appended to anything.
 
-        // Create a link.
+        let width_px = 25;
+        let height_px = 16;
+
+        // first, make the overall SVG object.
+        let previewSVG = document.createElementNS("http://www.w3.org/2000/svg", 'svg');
+        previewSVG.setAttribute('width', width_px);
+        previewSVG.setAttribute('height', height_px);
+        previewSVG.setAttribute('viewBox', [0, 0, width_px, height_px].join(""));
+        previewSVG.setAttribute('class', 'overlay-preview-icon');
+
+        // then, add a background which is opaque white.
+        let previewBackgroundRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        previewBackgroundRect.setAttribute('x', '0%');
+        previewBackgroundRect.setAttribute('y', '0%');
+        previewBackgroundRect.setAttribute('width', '100%');
+        previewBackgroundRect.setAttribute('height', '100%');
+        previewBackgroundRect.setAttribute('fill', '#fff');
+        previewSVG.appendChild(previewBackgroundRect);
+
+        // finally, draw a sample line similar in appearance to the actual overlay lines.
+        let previewLineRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        previewLineRect.setAttribute("y", height_px / 2 - overlayConfig['line-width'] / 2);
+        previewLineRect.setAttribute("width", "100%");
+        previewLineRect.setAttribute("height", overlayConfig['line-width']);
+        previewLineRect.setAttribute("fill", overlayConfig['line-color']);
+        previewSVG.appendChild(previewLineRect);
+        return previewSVG;
+    }
+
+    // Set up the corresponding toggle button for each overlay.
+    for (const overlayId in overlayLayersConfig) {
+        const overlayConfig = overlayLayersConfig[overlayId];
+
         const linkElement = document.createElement('a');
         linkElement.id = overlayId;
         linkElement.href = '#';
 
+        // Create and add a preview icon of the current overlay.  This only gets added for supported
+        // overlay types which we actually know how to draw previews for, currently just lines.
         if (overlayConfig['type'] === 'line') {
-            // create and add preview window of overlay layer
-            let previewSVG = document.createElementNS("http://www.w3.org/2000/svg", 'svg');
-            previewSVG.setAttribute('width', '25');
-            previewSVG.setAttribute('height', '16');
-            previewSVG.setAttribute('viewBox', '0 0 25 16');
-            previewSVG.setAttribute('class', 'layer-preview');
-            previewSVG.className = 'layer-preview';
-            let previewBackgroundRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            previewBackgroundRect.setAttribute('x', '0%');
-            previewBackgroundRect.setAttribute('y', '0%');
-            previewBackgroundRect.setAttribute('width', '100%');
-            previewBackgroundRect.setAttribute('height', '100%');
-            previewBackgroundRect.setAttribute('fill', '#fff');
-            previewSVG.appendChild(previewBackgroundRect);
-            let previewLineRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            previewLineRect.setAttribute("y", "40%");
-            previewLineRect.setAttribute("width", "100%");
-            previewLineRect.setAttribute("height", overlayConfig['line-width']);
-            previewLineRect.setAttribute("fill", overlayConfig['line-color']);
-            previewSVG.appendChild(previewLineRect);
-            linkElement.appendChild(previewSVG);
+            linkElement.appendChild(makeOverlayPreviewIcon(overlayConfig));
         }
 
-        // add text name of overlay layer
+        // Make the link text the pretty name of the overlay.
         const layerNameElement = document.createElement('span');
         layerNameElement.textContent = overlayConfig['name'];
         linkElement.appendChild(layerNameElement);
@@ -253,8 +284,8 @@
             toggleOverlayVisibility(this);
         };
 
-        const layersMenu = document.getElementById('layers-menu');
-        layersMenu.appendChild(linkElement);
+        // Add the new overlay toggle button to the menu.
+        document.getElementById('overlays-menu').appendChild(linkElement);
     }
 
     // Create the overall map element
@@ -265,12 +296,13 @@
         // center and zoom into San Diego
         center: [-117.1517, 32.7552],
         zoom: 11,
-    });    
+    });
 
-    // disable map rotation using touch rotation gesture
+    // Disable map rotation using touch rotation gesture.  I have found that while using this app on
+    // a phone, it is way too prone to accidental rotation.
     map.touchZoomRotate.disableRotation();
 
-    // once the map is loaded, fetch and load all the data for the layers and add them to the map.
+    // Once the map is loaded, fetch and load all the data for the layers and add them to the map.
     map.on('load', () => {
         // Find the index of the first symbol layer in the map style.  This
         // helps us later add data layers beneath the map symbols like street
@@ -348,6 +380,9 @@
                         }
                     );
                 } else if (overlayConfig.type === 'heatmap') {
+                    // We're going to make a custom heatmap overlay which is actually both a Mapbox GL "heatmap" AND a
+                    // Mapbox GL "circle" layer at the same time.  The heatmap layer will appear at lower zoom levels,
+                    // while the circle layer will appear at higher zoom levels.
                     map.addLayer({
                         'id': overlayId + '-heatmap',
                         'type': 'heatmap',
@@ -404,8 +439,12 @@
                             'circle-stroke-width': 1,
                             'circle-opacity': {
                                 stops: [
+                                    // The circles only begin to appear at zoom level 14 which is
+                                    // when the heatmap begins to fade away.
                                     [14, 0],
-                                    [15, 1]
+                                    // At zoom level 15, the heatmap has completely disappeared, so
+                                    // make the circles completely opaque.
+                                    [15, 1],
                                 ]
                             }
                         }
