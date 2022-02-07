@@ -114,7 +114,7 @@
             'name':               'Crashes (2011-2020)',
             'data-url':           'layers/crashes.geojson',
             'type':               'heatmap',
-	    'pivot-zoom':         14,
+            'pivot-zoom':         14,
             'default-visibility': 'none',
             'attribution':        'Crashes &copy; TIMS/UC Berkeley',
             // assign color values be applied to points depending on their density
@@ -141,7 +141,7 @@
                 'interpolate', ['linear'],
                 ['to-number', ['get', 'COLLISION_SEVERITY']], // interpolation input value
                 1, 1.0, // at collision severity 1 (someone killed), the weight at the maximum.
-	        // between severity 4-1, linearly interpolate the weight.
+                // between severity 4-1, linearly interpolate the weight.
                 4, 0.3, // at collision severity 4 (minor injury), the weight is low, at only 0.3.
             ],
         },
@@ -180,7 +180,7 @@
         // Append the first symbol id to give us an anchor.  All the layers we're dealing with in this function should
         // be non-text layers.
         layerRenderOrder.push(firstSymbolId);
-	// Finally, iterate the layer render order in reverse because moveLayer() only supports adding behind a
+        // Finally, iterate the layer render order in reverse because moveLayer() only supports adding behind a
         // specified layer.
         for (let i = layerRenderOrder.length - 2; i >= 0; i--) {
             map.moveLayer(layerRenderOrder[i], layerRenderOrder[i+1]);
@@ -262,7 +262,7 @@
     const map = new mapboxgl.Map({
         container: 'map',
         style: 'mapbox://styles/mapbox/light-v10',
-	// center and zoom into San Diego
+        // center and zoom into San Diego
         center: [-117.1517, 32.7552],
         zoom: 11,
     });    
@@ -365,7 +365,7 @@
                                     [9,  0.05],
                                     [11, 0.50],
                                     [15, 1.50],
-			            // >= zoom level 15 the heatmap is completely hidden and points are shown.
+                                    // >= zoom level 15 the heatmap is completely hidden and points are shown.
                                 ]
                             },
                             // assign color values dynamically
@@ -388,7 +388,7 @@
                         }
                     }, firstSymbolId);
 
-		    // Point layer shows up after zooming in far enough.
+                    // Point layer shows up after zooming in far enough.
                     map.addLayer({
                         'id': overlayId + '-points',
                         type: 'circle',
