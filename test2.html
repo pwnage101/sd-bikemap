@@ -130,10 +130,10 @@
                 property: 'COLLISION_SEVERITY',
                 type: 'categorical',
                 stops: [
-                    ['1', '#f00'], // red: collision severity 1 (killed)
-                    ['2', '#f70'], // reddish: collision severity 2 (severe injury)
-                    ['3', '#fb0'], // yellowish: collision severity 1 (injury)
-                    ['4', '#ff0'], // yellow: collision severity 1 (complaint of pain)
+                    [1, '#f00'], // red: collision severity 1 (killed)
+                    [2, '#f70'], // reddish: collision severity 2 (severe injury)
+                    [3, '#fb0'], // yellowish: collision severity 1 (injury)
+                    [4, '#ff0'], // yellow: collision severity 1 (complaint of pain)
                 ]
             },
             // increase weight as diameter breast height increases
@@ -357,7 +357,7 @@
                             'visibility': overlayConfig['default-visibility'],
                         },
                         'paint': {
-                            // increase weight as diameter breast height increases
+                            // assign weight dynamically
                             'heatmap-weight': overlayConfig['heatmap-weight'],
                             // increase intensity as zoom level increases
                             'heatmap-intensity': {
@@ -365,9 +365,10 @@
                                     [9,  0.05],
                                     [11, 0.50],
                                     [15, 1.50],
+			            // >= zoom level 15 the heatmap is completely hidden and points are shown.
                                 ]
                             },
-                            // assign color values be applied to points depending on their density
+                            // assign color values dynamically
                             'heatmap-color': overlayConfig['heatmap-color'],
                             // increase radius as zoom increases
                             'heatmap-radius': {
