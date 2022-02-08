@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "@mapbox/togeojson": "*",
-    "osmtogeojson": "*",
-    "csv2geojson": "*"
+    "osmtogeojson": "*"
   }
 }
