@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.6.1/mapbox-gl.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        #overlays-menu {
+            background: #fff;
+            position: absolute;
+            z-index: 1;
+            top: 10px;
+            right: 10px;
+            border-radius: 3px;
+            width: 180px;
+            border: 1px solid rgba(0, 0, 0, 0.4);
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        #overlays-menu a {
+            font-size: 13px;
+            color: #404040;
+            display: block;
+            margin: 0;
+            padding: 0;
+            padding: 10px;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+            text-align: left;
+        }
+        #overlays-menu a .overlay-preview-icon {
+            float: left;
+            border-style: solid;
+            border-width: 1px;
+            border-color: #5554;
+            margin-right: 0.5em;
+        }
+        #overlays-menu a:last-child {
+            border: none;
+        }
+        #overlays-menu a:hover {
+            background-color: #f8f8f8;
+            color: #404040;
+        }
+        #overlays-menu a.active {
+            background-color: #3887be;
+            color: #ffffff;
+        }
+        #overlays-menu a.active:hover {
+            background: #3074a4;
+        }
+        </style>
+</head>
+<body>
+
+<nav id="overlays-menu"></nav>
+<div id="map" style="width: 100%; height: 100%;"></div>
+<script src='dist/index.js'></script>
+
+</body>
+</html>
