@@ -44,4 +44,4 @@ crashes_df = crashes_df.drop(["POINT_X", "POINT_Y"], axis=1)
 crashes_gdf = gpd.GeoDataFrame(crashes_df, crs="EPSG:4326", geometry=crashes_geometry)
 
 # Write out geojson
-crashes_gdf.to_file("layers/crashes.geojson", driver="GeoJSON")
+crashes_gdf.to_file("static/overlays/crashes.geojson", driver="GeoJSON")

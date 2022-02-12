@@ -3000,27 +3000,6 @@
 },
 {
   "type": "Feature",
-  "id": "node/358792147",
-  "properties": {
-    "amenity": "school",
-    "ele": "128",
-    "gnis:county_id": "073",
-    "gnis:created": "01/19/1981",
-    "gnis:feature_id": "248947",
-    "gnis:state_id": "06",
-    "name": "San Pasqual Union School",
-    "id": "node/358792147"
-  },
-  "geometry": {
-    "type": "Point",
-    "coordinates": [
-      -116.9803074,
-      33.0889306
-    ]
-  }
-},
-{
-  "type": "Feature",
   "id": "node/358792180",
   "properties": {
     "amenity": "school",
@@ -11721,7 +11700,7 @@
   "properties": {
     "amenity": "school",
     "ele": "130",
-    "name": "Serra Senior High School",
+    "name": "Canyon Hills High School",
     "id": "way/101683963"
   },
   "geometry": {
@@ -18869,25 +18848,6 @@
 },
 {
   "type": "Feature",
-  "id": "way/565937855",
-  "properties": {
-    "addr:city": "San Diego",
-    "addr:housenumber": "4347",
-    "addr:street": "North Harbor Drive",
-    "amenity": "school",
-    "name": "San Diego Police and Fire Training Facility",
-    "id": "way/565937855"
-  },
-  "geometry": {
-    "type": "Point",
-    "coordinates": [
-      -117.209817,
-      32.7321072
-    ]
-  }
-},
-{
-  "type": "Feature",
   "id": "way/571489702",
   "properties": {
     "addr:city": "La Mesa",
@@ -20058,6 +20018,28 @@
     "coordinates": [
       -117.0117813,
       33.1098061
+    ]
+  }
+},
+{
+  "type": "Feature",
+  "id": "way/1028248191",
+  "properties": {
+    "amenity": "school",
+    "area": "yes",
+    "ele": "41",
+    "gnis:county_id": "073",
+    "gnis:created": "06/13/2000",
+    "gnis:feature_id": "1868371",
+    "gnis:state_id": "06",
+    "name": "Del Rio Elementary School",
+    "id": "way/1028248191"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      -117.2869516,
+      33.2575907
     ]
   }
 },

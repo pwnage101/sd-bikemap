@@ -1,7 +1,11 @@
 # Don't keep intermediate files that don't get used by the frontend.  These can
 # be easily re-downloaded via make.
-layers/*.osm
+static/overlays/*.osm
 
 node_modules/
 **/.ipynb_checkpoints/
 .python-version
+
+# tmp files
+*.swp
+*#

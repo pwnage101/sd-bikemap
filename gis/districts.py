@@ -7,5 +7,5 @@ centers_df = districts_df.copy()
 centers_df['geometry'] = centers_df.centroid
 
 # Write out geojson
-districts_df.to_file("layers/council_districts.geojson", driver="GeoJSON")
-centers_df.to_file("layers/council_district_centers.geojson", driver="GeoJSON")
+districts_df.to_file("static/overlays/council_districts.geojson", driver="GeoJSON")
+centers_df.to_file("static/overlays/council_district_centers.geojson", driver="GeoJSON")
