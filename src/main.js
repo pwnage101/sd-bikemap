@@ -18,15 +18,16 @@ map.touchZoomRotate.disableRotation();
 class BaseOverlay {
     id;
     name;
-    dataURL;
+    dataURLs;
     dataType;
     defaultVisibility;
     addedLayerIDs;
+    datas;
 
-    constructor(id, name, dataURL, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
+    constructor(id, name, dataURLs, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
         this.id = id;
         this.name = name;
-        this.dataURL = dataURL;
+        this.dataURLs = dataURLs;
         this.dataType = dataType;
         this.attribution = attribution;
         this.defaultVisibility = defaultVisibility;
@@ -41,17 +42,21 @@ class BaseOverlay {
     run() {
         var self = this;
         if (self.dataType === 'geojson') {
-            $.getJSON(self.dataURL, (data) => self.addLayersToMap(data));
+            var dataURLFetches = self.dataURLs.map((dataURL) => $.getJSON(dataURL));
         } else if (self.dataType === 'kml') {
-            $.ajax({
-                url: self.dataURL,
-                success: function(data) {
-                    let geojsonData = togeojson.kml(data);
-                    self.addLayersToMap(geojsonData);
-                },
-                dataType: 'xml',
-	    });
+            var dataURLFetches = self.dataURLs.map((dataURL) => $.ajax({url: dataURL, dataType: 'xml'}));
         }
+        $.when(...dataURLFetches).done(function(...results) {
+            if (self.dataURLs.length > 1) {
+                self.datas = results.map((r) => r[0]);
+            } else {
+                self.datas = [results[0]];
+            }
+            if (self.dataType === 'kml') {
+                self.datas = self.datas.map((kmlData) => togeojson.kml(kmlData));
+            }
+            map.on('load', () => self.addLayersToMap(self.datas));
+        });
     }
     addSimpleDataSourceToMap(data) {
         let overlaySourceConfig = {
@@ -67,7 +72,8 @@ class BaseOverlay {
     addSimpleLayerToMap(dataSource) {
         throw 'Unimplemented';
     }
-    addLayersToMap(data) {
+    addLayersToMap(datas) {
+        let data = datas[0];
         let dataSource = this.addSimpleDataSourceToMap(data);
         this.addSimpleLayerToMap(dataSource);
         this.addedLayerIDs = [this.id];
@@ -77,8 +83,8 @@ class BaseOverlay {
 
 class LineOverlay extends BaseOverlay {
     lineOptions;
-    constructor(id, name, dataURL, lineOptions, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
-        super(id, name, dataURL, attribution, defaultVisibility, dataType);
+    constructor(id, name, dataURLs, lineOptions, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
+        super(id, name, dataURLs, attribution, defaultVisibility, dataType);
         this.lineOptions = lineOptions;
     }
     addSimpleLayerToMap(dataSource) {
@@ -142,11 +148,12 @@ class LineOverlay extends BaseOverlay {
 
 class SymbolOverlay extends BaseOverlay {
     symbolOptions;
-    constructor(id, name, dataURL, symbolOptions, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
-        super(id, name, dataURL, attribution, defaultVisibility, dataType);
+    constructor(id, name, dataURLs, symbolOptions, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
+        super(id, name, dataURLs, attribution, defaultVisibility, dataType);
         this.symbolOptions = symbolOptions;
     }
-    addLayersToMap(data) {
+    addLayersToMap(datas) {
+        let data = datas[0];
         let dataSource = this.addSimpleDataSourceToMap(data);
         map.loadImage(
             this.symbolOptions['marker-url'],
@@ -181,11 +188,12 @@ class SymbolOverlay extends BaseOverlay {
 
 class CrashHeatmapOverlay extends BaseOverlay {
     options;
-    constructor(id, name, dataURL, options, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
-        super(id, name, dataURL, attribution, defaultVisibility, dataType);
+    constructor(id, name, dataURLs, options, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
+        super(id, name, dataURLs, attribution, defaultVisibility, dataType);
         this.options = options;
     }
-    addLayersToMap(data) {
+    addLayersToMap(datas) {
+        let data = datas[0];
         let dataSource = this.addSimpleDataSourceToMap(data);
         // Make both a Mapbox GL "heatmap" AND a Mapbox GL "circle" layer.  The heatmap layer will
         // appear at lower zoom levels, while the circle layer will appear at higher zoom levels.
@@ -266,12 +274,13 @@ class CrashHeatmapOverlay extends BaseOverlay {
 
 class CountyBoundaryOverlay extends BaseOverlay {
     options;
-    constructor(id, name, dataURL, options, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
-        super(id, name, dataURL, attribution, defaultVisibility, dataType);
+    constructor(id, name, dataURLs, options, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
+        super(id, name, dataURLs, attribution, defaultVisibility, dataType);
         this.options = options;
     }
-    addLayersToMap(data) {
-	// For this overlay, draw two layers: one to shade darker all areas outside of the county,
+    addLayersToMap(datas) {
+        let data = datas[0];
+        // For this overlay, draw two layers: one to shade darker all areas outside of the county,
         // and another to draw a line on the county boundary.
 
         let outlineLayer = this.id + '-outline';
@@ -281,7 +290,7 @@ class CountyBoundaryOverlay extends BaseOverlay {
         map.addSource(outlineLayer, {'type': 'geojson', 'data': data});
         let dataInverted = cloneDeep(data);
         dataInverted.features[0].geometry.coordinates[0].unshift([
-	    // Invert the first (hopefully only) polygon by adding a box around the entire world.
+            // Invert the first (hopefully only) polygon by adding a box around the entire world.
             [180, -90], [180, 90], [-180, 90], [-180, -90]
         ]);
         map.addSource(shadedLayer, {'type': 'geojson', 'data': dataInverted});
@@ -324,10 +333,66 @@ class CountyBoundaryOverlay extends BaseOverlay {
     }
 }
 
+class CouncilDistrictsOverlay extends BaseOverlay {
+    options;
+    constructor(id, name, dataURLs, options, attribution = undefined, defaultVisibility = 'visible', dataType = 'geojson') {
+        super(id, name, dataURLs, attribution, defaultVisibility, dataType);
+        this.options = options;
+    }
+    addLayersToMap(datas) {
+        // For this overlay, draw two layers: one to outline the council districts and another as a symbol for each.
+
+        let outlineLayer = this.id + '-outline';
+        let symbolsLayer = this.id + '-symbols';
+
+        map.addSource(outlineLayer, {'type': 'geojson', 'data': datas[0]});
+        map.addSource(symbolsLayer, {'type': 'geojson', 'data': datas[1]});
+
+        // add layer for the line around the county.
+        map.addLayer({
+            'id': outlineLayer,
+            'type': 'line',
+            'source': outlineLayer,
+            'layout': {
+                'line-join':  this.options['line-join'] || 'round',
+                'line-cap':   this.options['line-cap'] || 'round',
+                'visibility': this.defaultVisibility,
+            },
+            'paint': {
+                'line-color':   this.options['line-color'],
+                'line-opacity': this.options['line-opacity'] || 1,
+                'line-width':   this.options['line-width'],
+                'line-offset':  this.options['line-offset'] || 0,
+            },
+        });
+
+        // add layer for the shading outside the county.
+        map.addLayer({
+            'id': symbolsLayer,
+            'type': 'symbol',
+            'source': symbolsLayer,
+            'layout': {
+                'visibility': this.defaultVisibility,
+                'text-size': 32,
+                'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                'text-field': ['get', 'DISTRICT'],
+                'symbol-sort-key': 0,
+            },
+            'paint': {
+                'text-color': this.options['line-color'],
+                'text-halo-color': 'rgba(255, 255, 255, 128)',
+                'text-halo-width': 3,
+            }
+        });
+
+        this.addedLayerIDs = [outlineLayer, symbolsLayer];
+    }
+}
+
 const countyBoundaryOverlay = new CountyBoundaryOverlay(
     'countyBoundary',
     'SD County Boundary',
-    'static/overlays/sd_county_boundary.geojson',
+    ['static/overlays/sd_county_boundary.geojson'],
     {
         'line-color':   '#888',
         'line-opacity': 0.5,
@@ -341,7 +406,7 @@ const countyBoundaryOverlay = new CountyBoundaryOverlay(
 const bikeLanesOverlay = new LineOverlay(
     'bikeLanes',
     'OSM Bike Lanes',
-    'static/overlays/current_bike_infrastructure.geojson',
+    ['static/overlays/current_bike_infrastructure.geojson'],
     {
         'line-color': '#22f',
         'line-width': 3,
@@ -365,7 +430,7 @@ campaigns: {
 const sexyStreetsOverlay = new LineOverlay(
     'sexyStreets',
     'SD "Sexy Streets"',
-    'https://www.google.com/maps/d/kml?forcekml=1&mid=14jDx5zS0vM4lMZRxtzLcF2hw_f_jUC82',
+    ['https://www.google.com/maps/d/kml?forcekml=1&mid=14jDx5zS0vM4lMZRxtzLcF2hw_f_jUC82'],
     { // options
         'line-color':  '#d10069',
         'line-width':  2,
@@ -375,12 +440,12 @@ const sexyStreetsOverlay = new LineOverlay(
     'kml', // dataType
 );
 
-const councilDistrictsOverlay = new LineOverlay(
+const councilDistrictsOverlay = new CouncilDistrictsOverlay(
     'councilDistricts',
     'Council Districts',
-    'static/overlays/council_districts.geojson',
+    ['static/overlays/council_districts.geojson', 'static/overlays/council_district_centers.geojson'],
     { // options
-        'line-color':  '#2f2',
+        'line-color':  '#292',
         'line-width':  5,
     },
     'Council Districts &copy; SanGIS', // attribution
@@ -390,7 +455,7 @@ const councilDistrictsOverlay = new LineOverlay(
 const schoolsOverlay = new SymbolOverlay(
     'schools',
     'Schools',
-    'static/overlays/schools.geojson',
+    ['static/overlays/schools.geojson'],
     {
         'marker-url': 'icons/college.png',
         'text-field': [
@@ -406,7 +471,7 @@ const schoolsOverlay = new SymbolOverlay(
 const crashesOverlay = new CrashHeatmapOverlay(
     'crashes',
     'Crashes (2011-2020)',
-    'static/overlays/crashes.geojson',
+    ['static/overlays/crashes.geojson'],
     {
         // assign color values be applied to points depending on their density
         'heatmap-color': [
@@ -453,7 +518,6 @@ const renderOrder = [
     crashesOverlay,
     bikeLanesOverlay,
     sexyStreetsOverlay,
-    councilDistrictsOverlay,
 ];
 const menuOrder = [
     bikeLanesOverlay,
@@ -551,7 +615,8 @@ for (const overlay of menuOrder) {
 // Index of the first symbol layer in the map style.
 var firstSymbolId;
 
-// Once the map is loaded, fetch and load all the data for the layers and add them to the map.
+// Once the map is loaded, determine the firstSymbolId which is used as a
+// heuristic for adding new layers.
 map.on('load', () => {
     // Find the index of the first symbol layer in the map style.  This
     // helps us later add data layers beneath the map symbols like street
@@ -562,8 +627,9 @@ map.on('load', () => {
             break;
         }
     }
-    // loop over each overlay layer and fetch the data and add it to the map.
-    for (const overlay of allOverlays) {
-        overlay.run();
-    }
 });
+
+// loop over each overlay layer and fetch the data.
+for (const overlay of allOverlays) {
+    overlay.run();
+}
