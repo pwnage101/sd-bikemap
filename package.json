@@ -1,9 +1,10 @@
 {
   "dependencies": {
     "@mapbox/togeojson": "*",
-    "osmtogeojson": "*",
+    "brfs": "*",
     "browserify": "*",
     "lodash.clonedeep": "*",
-    "brfs": "*"
+    "minify-geojson": "*",
+    "osmtogeojson": "*"
   }
 }

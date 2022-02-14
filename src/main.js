@@ -392,7 +392,7 @@ class CouncilDistrictsOverlay extends BaseOverlay {
 const countyBoundaryOverlay = new CountyBoundaryOverlay(
     'countyBoundary',
     'SD County Boundary',
-    ['static/overlays/sd_county_boundary.geojson'],
+    ['static/overlays/sd_county_boundary.min.geojson'],
     {
         'line-color':   '#888',
         'line-opacity': 0.5,
@@ -406,7 +406,7 @@ const countyBoundaryOverlay = new CountyBoundaryOverlay(
 const bikeLanesOverlay = new LineOverlay(
     'bikeLanes',
     'OSM Bike Lanes',
-    ['static/overlays/current_bike_infrastructure.geojson'],
+    ['static/overlays/current_bike_infrastructure.min.geojson'],
     {
         'line-color': '#22f',
         'line-width': 3,
@@ -443,7 +443,7 @@ const sexyStreetsOverlay = new LineOverlay(
 const councilDistrictsOverlay = new CouncilDistrictsOverlay(
     'councilDistricts',
     'Council Districts',
-    ['static/overlays/council_districts.geojson', 'static/overlays/council_district_centers.geojson'],
+    ['static/overlays/council_districts.min.geojson', 'static/overlays/council_district_centers.min.geojson'],
     { // options
         'line-color':  '#292',
         'line-width':  5,
@@ -471,7 +471,7 @@ const schoolsOverlay = new SymbolOverlay(
 const crashesOverlay = new CrashHeatmapOverlay(
     'crashes',
     'Crashes (2011-2020)',
-    ['static/overlays/crashes.geojson'],
+    ['static/overlays/crashes.min.geojson'],
     {
         // assign color values be applied to points depending on their density
         'heatmap-color': [

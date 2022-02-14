@@ -2425,8 +2425,6 @@ class BaseOverlay {
             if (self.dataType === 'kml') {
                 self.datas = self.datas.map((kmlData) => togeojson.kml(kmlData));
             }
-            console.log(results);
-            //self.addLayersToMap(datas);
             map.on('load', () => self.addLayersToMap(self.datas));
         });
     }
@@ -2764,7 +2762,7 @@ class CouncilDistrictsOverlay extends BaseOverlay {
 const countyBoundaryOverlay = new CountyBoundaryOverlay(
     'countyBoundary',
     'SD County Boundary',
-    ['static/overlays/sd_county_boundary.geojson'],
+    ['static/overlays/sd_county_boundary.min.geojson'],
     {
         'line-color':   '#888',
         'line-opacity': 0.5,
@@ -2778,7 +2776,7 @@ const countyBoundaryOverlay = new CountyBoundaryOverlay(
 const bikeLanesOverlay = new LineOverlay(
     'bikeLanes',
     'OSM Bike Lanes',
-    ['static/overlays/current_bike_infrastructure.geojson'],
+    ['static/overlays/current_bike_infrastructure.min.geojson'],
     {
         'line-color': '#22f',
         'line-width': 3,
@@ -2815,7 +2813,7 @@ const sexyStreetsOverlay = new LineOverlay(
 const councilDistrictsOverlay = new CouncilDistrictsOverlay(
     'councilDistricts',
     'Council Districts',
-    ['static/overlays/council_districts.geojson', 'static/overlays/council_district_centers.geojson'],
+    ['static/overlays/council_districts.min.geojson', 'static/overlays/council_district_centers.min.geojson'],
     { // options
         'line-color':  '#292',
         'line-width':  5,
@@ -2843,7 +2841,7 @@ const schoolsOverlay = new SymbolOverlay(
 const crashesOverlay = new CrashHeatmapOverlay(
     'crashes',
     'Crashes (2011-2020)',
-    ['static/overlays/crashes.geojson'],
+    ['static/overlays/crashes.min.geojson'],
     {
         // assign color values be applied to points depending on their density
         'heatmap-color': [
@@ -2987,7 +2985,8 @@ for (const overlay of menuOrder) {
 // Index of the first symbol layer in the map style.
 var firstSymbolId;
 
-// Once the map is loaded, load all the data for the layers and add them to the map.
+// Once the map is loaded, determine the firstSymbolId which is used as a
+// heuristic for adding new layers.
 map.on('load', () => {
     // Find the index of the first symbol layer in the map style.  This
     // helps us later add data layers beneath the map symbols like street
@@ -2998,10 +2997,6 @@ map.on('load', () => {
             break;
         }
     }
-    // loop over each overlay layer and fetch the data and add it to the map.
-    //for (const overlay of allOverlays) {
-    //    overlay.run();
-    //}
 });
 
 // loop over each overlay layer and fetch the data.
